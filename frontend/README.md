@@ -29,7 +29,7 @@ All `VITE_` variables are built into the browser bundle, so they are public. Non
 | --- | --- | --- |
 | `VITE_GOOGLE_MAPS_API_KEY` | Maps JavaScript API key. Without it, the map view shows a setup message and the list view still works. | Production, Preview and Development. Sensitive off. |
 | `VITE_GOOGLE_MAPS_MAP_ID` | Map ID from Google Cloud's Map Management, used for Advanced Markers and map styling. Defaults to `DEMO_MAP_ID`, which is only for development. | Production, Preview and Development. Sensitive off. |
-| `VITE_USE_MOCK_API` | `true` uses the sample itinerary instead of the backend. | Production, Preview: `true` until the backend is deployed, then `false`. |
+| `VITE_USE_MOCK_API` | `true` uses the sample itinerary instead of the backend. | Production, Preview: `false`. |
 | `VITE_API_BASE_URL` | Backend origin, if it isn't served from the same origin under `/api`. | Not set. |
 
 In Vercel, a variable targets either "Production, Preview" or "Development", so a value used in both is added twice. Sensitive variables can't target Development and can't be pulled.
@@ -47,7 +47,7 @@ The Vercel project is connected to the GitHub repo with **Root Directory** set t
 
 `VITE_` values are fixed at build time. After changing one in Vercel, redeploy (Deployments → ⋯ → Redeploy) for it to take effect.
 
-`vercel.json` serves `index.html` for every path except `/api/*`, so links such as `/trip?city=Paris&days=3` work on refresh.
+`vercel.json` forwards `/api/*` to the backend at `https://aitinera-api.vercel.app`, so the browser calls the API on the frontend's own domain. Every other path serves `index.html`, so links such as `/trip?city=Paris&days=3` work on refresh.
 
 ## Scripts
 

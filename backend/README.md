@@ -20,7 +20,9 @@ Requires Python 3.12.
 cd backend
 python3.12 -m venv .venv
 .venv/bin/pip install -r requirements-dev.txt
-cp .env.example .env          # then add your keys
+npm i -g vercel               # once
+vercel link                   # once: select the aitinera-api project, not the frontend
+vercel env pull .env          # development API keys from Vercel
 .venv/bin/uvicorn app.main:app --reload --port 8000
 ```
 
@@ -32,16 +34,40 @@ curl -X POST localhost:8000/api/itinerary \
   -d '{"city": "Paris", "days": 3}'
 ```
 
-To use it from the frontend, run `npm run dev` in `frontend/` with `VITE_USE_MOCK_API=false` in `frontend/.env.local`. Vite proxies `/api` to port 8000.
+To use it from the frontend, run `npm run dev` in `frontend/`. Vite proxies `/api` to port 8000.
 
 ## Keys
 
-| Variable | Where to get it |
-| --- | --- |
-| `GEMINI_API_KEY` | Google AI Studio → Get API key. |
-| `GOOGLE_MAPS_SERVER_KEY` | Google Cloud Console → Credentials → Create API key. Enable **Places API (New)** and **Routes API**, and restrict the key to those two APIs. Use a separate key from the frontend's `VITE_GOOGLE_MAPS_API_KEY`: this one must never reach the browser. |
+The backend needs two keys. Both are server-only and are never sent to the browser.
 
-Locally they go in `backend/.env` (git-ignored). On Vercel, add them under Settings → Environment Variables with **Sensitive** on and **Production, Preview** selected. Sensitive variables can't target Development, so local development always uses `.env`.
+| Variable | What it is |
+| --- | --- |
+| `GEMINI_API_KEY` | Google AI Studio → Get API key, in a Google Cloud project with billing. |
+| `GOOGLE_MAPS_SERVER_KEY` | Google Cloud Console → Credentials. No application restriction; API restriction: **Places API (New)** and **Routes API** only. Separate from the frontend's `VITE_GOOGLE_MAPS_API_KEY`. |
+
+Production and development use **different keys**, both stored in the `aitinera-api` Vercel project (Settings → Environment Variables):
+
+| Environment | Sensitive | Used by |
+| --- | --- | --- |
+| Production, Preview | On (values can't be viewed or pulled) | Deployed backend |
+| Development | Off | Local development, through `vercel env pull` |
+
+### Fetching development keys
+
+From `backend/`:
+
+```sh
+vercel link          # once per machine; choose the aitinera-api project
+vercel env pull .env
+```
+
+- Pull into `.env` explicitly: `vercel env pull` writes `.env.local` by default, but the backend reads only `.env`.
+- The pull overwrites `.env`. To change a setting such as `GEMINI_MODEL` for everyone, add it to the Development environment in Vercel instead of editing `.env` by hand.
+- Restart `uvicorn` after pulling; `--reload` watches code, not `.env`.
+- `.env` and `.vercel/` are git-ignored. Extra variables Vercel adds (such as `VERCEL_OIDC_TOKEN`) are ignored by the backend.
+- Without access to the Vercel project, copy `.env.example` to `.env` and fill in your own keys.
+
+If a key leaks, regenerate it in Google Cloud or AI Studio, update the value in Vercel, redeploy (production) or pull again (development).
 
 Optional tuning variables and their defaults are listed in `.env.example` and `app/config.py`. `GEMINI_MODEL` defaults to `gemini-3.8-flash`.
 
@@ -96,17 +122,12 @@ Errors return `{"detail": "<message for the user>"}`:
 
 `{"status": "ok"}`. No external calls.
 
-## Deploy on Vercel
+## Deployment
 
-1. vercel.com/new → import the AItinera repo again as a **second project** (for example `aitinera-api`).
-2. **Root Directory:** `backend`. Vercel detects FastAPI from `app/main.py` and installs `requirements.txt`. `vercel.json` allows 60 s per request.
-3. Add `GEMINI_API_KEY` and `GOOGLE_MAPS_SERVER_KEY` (Sensitive, Production and Preview), then deploy.
-4. Check `https://<backend>.vercel.app/api/health`.
-5. Connect the frontend: in `frontend/vercel.json`, add this rewrite **before** the existing one, then set the frontend's `VITE_USE_MOCK_API` to `false` (Production, Preview) and redeploy it.
-   ```json
-   { "source": "/api/(.*)", "destination": "https://<backend>.vercel.app/api/$1" }
-   ```
-   The browser then calls `/api` on the frontend's own domain, so no CORS setup is needed in production.
+The backend is the Vercel project **aitinera-api**, deployed at https://aitinera-api.vercel.app. It's imported from the same repo as the frontend with **Root Directory** `backend`; Vercel detects FastAPI from `app/main.py` and installs `requirements.txt`. `vercel.json` allows 60 s per request. Pushing to `main` deploys to production.
+
+- Health check: `https://aitinera-api.vercel.app/api/health`.
+- The frontend forwards `/api/*` to this URL through a rewrite in `frontend/vercel.json`, so the browser only talks to the frontend's own domain and no CORS setup is needed in production. If the backend URL changes, update that rewrite.
 
 ## Cost per request
 
