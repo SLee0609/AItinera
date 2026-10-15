@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Schibsted Grotesk", ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  --color-ink: #151a1e;
+  --color-sub: #69717a;
+  --color-line: #e4e5e1;
+  --color-canvas: #f7f7f5;
+  --color-track: #edeeea;
+  --color-accent: #0f766e;
+  --color-accent-hover: #115e59;
+  --color-accent-soft: #ccfbf1;
+  --color-accent-ink: #0f766e;
+  --color-naive: #a9aeb3;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    @apply bg-canvas font-sans text-ink;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
