@@ -21,7 +21,6 @@ const DAY_PLANS: DayPlan[] = [
     ],
     legs: [{ durationMinutes: 18 }, { durationMinutes: 22 }],
     travelMinutes: 40,
-    naiveTravelMinutes: 65,
   },
   {
     day: 2,
@@ -34,7 +33,6 @@ const DAY_PLANS: DayPlan[] = [
     ],
     legs: [{ durationMinutes: 15 }, { durationMinutes: 6 }, { durationMinutes: 14 }],
     travelMinutes: 35,
-    naiveTravelMinutes: 72,
   },
   {
     day: 3,
@@ -47,7 +45,6 @@ const DAY_PLANS: DayPlan[] = [
     ],
     legs: [{ durationMinutes: 24 }, { durationMinutes: 18 }, { durationMinutes: 12 }],
     travelMinutes: 54,
-    naiveTravelMinutes: 89,
   },
 ];
 

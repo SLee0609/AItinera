@@ -20,9 +20,7 @@ export default function ListView({ itinerary }: { itinerary: Itinerary }) {
                   {dayTitle(day)}
                 </h3>
                 <p className="text-xs text-sub">
-                  {formatTravel(day.travelMinutes)} travel
-                  {day.naiveTravelMinutes !== undefined && ` (was ${formatTravel(day.naiveTravelMinutes)})`} ·{" "}
-                  {formatVisit(dayVisitMinutes(day))} at sights
+                  {formatTravel(day.travelMinutes)} travel · {formatVisit(dayVisitMinutes(day))} at sights
                 </p>
               </header>
               <div className="px-3 pt-2 pb-3">

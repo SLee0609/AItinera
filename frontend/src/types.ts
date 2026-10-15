@@ -39,8 +39,6 @@ export interface DayPlan {
   stops: Stop[];
   legs: Leg[];
   travelMinutes: number;
-  /** Travel time for this day's stops in their original, unoptimized order. */
-  naiveTravelMinutes?: number;
 }
 
 export interface Itinerary {
@@ -49,5 +47,6 @@ export interface Itinerary {
   travelMode: TravelMode;
   dayPlans: DayPlan[];
   optimizedTravelMinutes: number;
+  /** Travel time for the same attractions in the order the LLM suggested them, cut into consecutive days. */
   naiveTravelMinutes: number;
 }

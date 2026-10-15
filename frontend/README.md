@@ -17,7 +17,9 @@ npm run dev            # http://localhost:5173
 
 `vercel env pull` overwrites `.env.local`. Run it again whenever a variable changes in Vercel. If you don't have access to the Vercel project, copy `.env.example` to `.env.local` and fill in the values by hand.
 
-The app falls back to a built-in Paris sample during local development, because `VITE_USE_MOCK_API=true` is set in `.env.development`. A value in `.env.local` takes precedence. To call a local FastAPI backend instead, set `VITE_USE_MOCK_API=false` in `.env.local`. Requests to `/api` are proxied to `http://localhost:8000`.
+By default the dev server calls the backend: requests to `/api` are proxied to `http://localhost:8000`, so start the FastAPI server first (see `backend/README.md`). To use the built-in Paris sample instead, set `VITE_USE_MOCK_API=true` in `.env.local`. Restart `npm run dev` after changing any env file; Vite reads them only at startup.
+
+Don't add a `.env.development` file for this: Vite gives mode-specific files priority over `.env.local`, so its values would override yours.
 
 ## Environment variables
 

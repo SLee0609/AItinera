@@ -3,8 +3,8 @@ import CompareBars from "./CompareBars";
 import ItineraryMap, { type SelectedStop } from "./ItineraryMap";
 import StopList from "./StopList";
 import { ChevronIcon } from "./icons";
-import { formatTravel, pluralDays, travelModePhrase } from "../lib/format";
-import { dayColor, dayTitle } from "../lib/itinerary";
+import { formatTravel, formatVisit, pluralDays, travelModePhrase } from "../lib/format";
+import { dayColor, dayTitle, dayVisitMinutes } from "../lib/itinerary";
 import type { Itinerary } from "../types";
 
 export default function MapView({ itinerary }: { itinerary: Itinerary }) {
@@ -108,9 +108,9 @@ export default function MapView({ itinerary }: { itinerary: Itinerary }) {
             </b>
           </div>
           {focused ? (
-            focused.naiveTravelMinutes !== undefined && (
-              <CompareBars optimized={focused.travelMinutes} naive={focused.naiveTravelMinutes} color={dayColor(focusDay!)} />
-            )
+            <p className="text-[12.5px] text-sub">
+              {focused.stops.length} stops · {formatVisit(dayVisitMinutes(focused))} at sights
+            </p>
           ) : (
             <CompareBars optimized={itinerary.optimizedTravelMinutes} naive={itinerary.naiveTravelMinutes} />
           )}
