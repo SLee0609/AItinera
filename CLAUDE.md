@@ -23,7 +23,7 @@ Run the relevant tests, lint and build after changes.
 
 ## Backend structure
 
-- `app/pipeline.py` orchestrates: Places resolves the city → Gemini suggests `6 × days` candidates → Places verifies `4 × days` → `partition_into_days` → Routes transit times for needed pairs only → `best_order` per day → baseline → optional route polylines.
+- `app/pipeline.py` orchestrates: Places resolves the city → Gemini suggests `6 × days` candidates → Places verifies `4 × days` → `partition_into_days` → Routes transit times for needed pairs only → `best_order` per day → `fastest_plan` (falls back to the naive baseline days if they travel less) → optional route polylines.
 - `app/algorithm/` is pure (no I/O, deterministic, ties broken by index); keep it that way and unit-test it.
 - `partition_into_days` minimizes total estimated (straight-line) travel per day. It runs greedy assignment plus local search once per possible first seed and scores days with exact Held-Karp, which is exponential in stops per day. Keep `max_stops_per_day` around 8, or the request's CPU time grows quickly.
 - `app/services/` wraps Google APIs; `google_http.py` turns HTTP failures into `UpstreamError` (502).

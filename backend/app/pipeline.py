@@ -8,7 +8,7 @@ from itertools import pairwise
 
 import httpx
 
-from .algorithm.baseline import baseline_pairs, naive_travel_minutes
+from .algorithm.baseline import baseline_pairs, fastest_plan, naive_travel_minutes
 from .algorithm.clustering import partition_into_days
 from .algorithm.ordering import TravelTimes, best_order, intra_day_pairs
 from .config import Settings
@@ -67,8 +67,11 @@ async def _run(client: httpx.AsyncClient, query: str, days: int, s: Settings) ->
     pairs = intra_day_pairs(groups) | baseline_pairs(len(attractions), days)
     times = await routes.transit_times(client, key, points, pairs, departure)
 
-    # 5. Best order within each day.
-    orders = [best_order(g, times)[0] for g in groups]
+    # 5. Best order within each day, falling back to the naive plan if it travels less.
+    optimized = [best_order(g, times)[0] for g in groups]
+    orders = fastest_plan(optimized, len(attractions), days, times)
+    if orders != optimized:
+        log.info("Naive plan for %s travels less than the optimized one; using it instead", city.name)
 
     # 6. Route lines for the map (optional).
     polylines = (

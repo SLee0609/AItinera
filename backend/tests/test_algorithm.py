@@ -3,7 +3,14 @@ from itertools import pairwise, permutations
 
 import pytest
 
-from app.algorithm.baseline import baseline_pairs, naive_days, naive_travel_minutes, split_evenly
+from app.algorithm.baseline import (
+    baseline_pairs,
+    fastest_plan,
+    naive_days,
+    naive_travel_minutes,
+    route_minutes,
+    split_evenly,
+)
 from app.algorithm.clustering import (
     assign_remaining,
     distance_matrix,
@@ -192,3 +199,28 @@ def test_baseline_pairs_and_minutes():
     assert baseline_pairs(5, 2) == {(0, 1), (1, 2), (3, 4)}
     times = {(0, 1): 89.0, (1, 2): 150.0, (3, 4): 31.0}  # 1.48, 2.5, 0.52 minutes
     assert naive_travel_minutes(5, 2, times) == 1 + 2 + 1
+
+
+def test_route_minutes_rounds_per_leg():
+    times = {(0, 1): 89.0, (1, 2): 89.0}  # 1.48 minutes each
+    assert route_minutes([[0, 1, 2], [3]], times) == 1 + 1
+
+
+# Naive days for 4 stops over 2 days are [0, 1] and [2, 3]; the optimized plan pairs them differently.
+OPTIMIZED = [[0, 2], [1, 3]]
+
+
+def test_fastest_plan_keeps_optimized_when_it_travels_less():
+    times = {(0, 2): 60.0, (1, 3): 60.0, (0, 1): 600.0, (2, 3): 600.0}
+    assert fastest_plan(OPTIMIZED, 4, 2, times) == OPTIMIZED
+
+
+def test_fastest_plan_falls_back_to_naive_when_it_travels_less():
+    times = {(0, 2): 600.0, (1, 3): 600.0, (0, 1): 60.0, (2, 3): 60.0}
+    assert fastest_plan(OPTIMIZED, 4, 2, times) == [[0, 1], [2, 3]]
+
+
+def test_fastest_plan_keeps_optimized_on_a_tie():
+    # 89 s and 150 s legs round to the same minutes (1 + 2 = 3 per plan).
+    times = {(0, 2): 89.0, (1, 3): 150.0, (0, 1): 150.0, (2, 3): 89.0}
+    assert fastest_plan(OPTIMIZED, 4, 2, times) == OPTIMIZED

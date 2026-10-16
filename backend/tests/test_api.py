@@ -91,6 +91,29 @@ def test_only_needed_pairs_are_requested(client, fake_google):
     assert len(fake_google["pairs"]) < 12 * 11  # never the full matrix
 
 
+def test_falls_back_to_naive_plan_when_it_travels_less(client, fake_google, monkeypatch, paris_attractions):
+    def names_by_day(body):
+        return [[s["name"] for s in d["stops"]] for d in body["dayPlans"]]
+
+    naive = [[a.name for a in paris_attractions[i : i + 4]] for i in (0, 4, 8)]
+    # With walking-estimate times the optimized plan differs from the naive one...
+    assert names_by_day(client.post("/api/itinerary", json={"city": "Paris", "days": 3}).json()) != naive
+
+    # ...but when the naive plan's legs are fast and every other leg is slow, the naive plan wins.
+    naive_pairs = {(i, i + 1) for start in (0, 4, 8) for i in range(start, start + 3)}
+
+    async def transit_times(_client, _key, _points, pairs, _departure):
+        return {p: 60.0 if p in naive_pairs else 1800.0 for p in pairs}
+
+    monkeypatch.setattr(routes, "transit_times", transit_times)
+    body = client.post("/api/itinerary", json={"city": "Paris", "days": 3}).json()
+
+    assert names_by_day(body) == naive
+    assert body["optimizedTravelMinutes"] == body["naiveTravelMinutes"] == 9
+    # Route lines are fetched for the plan that is returned.
+    assert [leg["polyline"] for leg in body["dayPlans"][0]["legs"]] == ["line0-1", "line1-2", "line2-3"]
+
+
 def test_polylines_can_be_disabled(client, fake_google):
     main.app.dependency_overrides[get_settings] = lambda: SETTINGS.model_copy(update={"route_polylines": False})
     body = client.post("/api/itinerary", json={"city": "Paris", "days": 2}).json()

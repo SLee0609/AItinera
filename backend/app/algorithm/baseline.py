@@ -1,5 +1,6 @@
 """The naive itinerary used as a reference: attractions in the LLM's order, cut into consecutive days."""
 
+from collections.abc import Sequence
 from itertools import pairwise
 
 from .ordering import TravelTimes
@@ -24,6 +25,21 @@ def baseline_pairs(n: int, days: int) -> set[tuple[int, int]]:
     return {(a, b) for day in naive_days(n, days) for a, b in pairwise(day)}
 
 
+def route_minutes(orders: Sequence[Sequence[int]], times: TravelTimes) -> int:
+    """Total travel of the day routes, rounded per leg like the API response so totals are comparable."""
+    return sum(round(times[(a, b)] / 60) for order in orders for a, b in pairwise(order))
+
+
 def naive_travel_minutes(n: int, days: int, times: TravelTimes) -> int:
-    """Rounded per leg, like the optimized itinerary, so the two totals are comparable."""
-    return sum(round(times[(a, b)] / 60) for day in naive_days(n, days) for a, b in pairwise(day))
+    return route_minutes(naive_days(n, days), times)
+
+
+def fastest_plan(orders: Sequence[Sequence[int]], n: int, days: int, times: TravelTimes) -> list[list[int]]:
+    """The optimized day routes, or the naive ones when those travel less.
+
+    Days are partitioned with straight-line estimates but scored with real transit times, so the
+    naive plan can occasionally win; the itinerary should never be slower than its baseline. Ties
+    keep the optimized plan.
+    """
+    naive = naive_days(n, days)
+    return naive if route_minutes(naive, times) < route_minutes(orders, times) else [list(o) for o in orders]

@@ -1,6 +1,6 @@
 # AItinera
 
-**AI-powered efficient travel itineraries. Less backtracking, more exploring.**
+**Create efficient travel itineraries. Less backtracking, more exploring.**
 
 AItinera turns a destination and a trip length into a day-by-day sightseeing plan that keeps travel time low. An LLM suggests attractions, Google Maps verifies them and supplies transit times, and the app groups the stops into compact days and orders each day for the shortest route. Each plan shows its total travel time next to the travel time for the same stops in their unoptimized order.
 
@@ -14,7 +14,7 @@ AItinera turns a destination and a trip length into a day-by-day sightseeing pla
 3. **Split into days.** Attractions are grouped into days so that the total estimated travel, the shortest straight-line route through each day's stops, is as small as possible, with a cap on each day's sightseeing time. A quick greedy grouping is built from several starting points, then improved by moving and swapping attractions between days.
 4. **Get transit times.** Google Routes returns transit times for every pair of stops within a day, plus the pairs the baseline needs. Fetching only these pairs, instead of a full matrix, keeps cost growing linearly with trip length.
 5. **Order each day.** Every possible order of a day's stops is compared, and the one with the least travel time is kept.
-6. **Compare and present.** The baseline is the same attractions in the LLM's order, cut into consecutive days. The frontend shows the plan as a list or on an interactive map.
+6. **Compare and present.** The baseline is the same attractions in the LLM's order, cut into consecutive days. Because days are grouped by straight-line estimates but scored with real transit times, the baseline can occasionally travel less; the baseline is then returned as the plan, so the itinerary is never slower than it. The frontend shows the plan as a list or on an interactive map.
 
 ## Architecture
 
