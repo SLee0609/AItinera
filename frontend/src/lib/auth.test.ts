@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { User } from "@supabase/supabase-js";
-import { loginUrl, safeNext, saveAfterLoginPath } from "./auth";
+import { linkError, loginUrl, resetPasswordUrl, safeNext, saveAfterLoginPath } from "./auth";
 import { tripUrl } from "./itinerary";
 import { displayName, initials } from "../auth/context";
 
@@ -56,4 +56,25 @@ describe("initials and displayName", () => {
     expect(displayName(user({}, "a@x.com"))).toBe("a@x.com");
     expect(displayName(user({ full_name: 42 }))).toBe("Account");
   });
+});
+
+describe("resetPasswordUrl", () => {
+  it("carries next through the reset page", () => {
+    const url = resetPasswordUrl("/trip/abc?save=1");
+    expect(url).toBe("/reset-password?next=%2Ftrip%2Fabc%3Fsave%3D1");
+    expect(safeNext(new URLSearchParams(url.split("?")[1]).get("next"))).toBe("/trip/abc?save=1");
+  });
+});
+
+describe("linkError", () => {
+  it("is null for a normal sign-in fragment", () => {
+    expect(linkError("#access_token=x&type=recovery")).toBeNull();
+    expect(linkError("")).toBeNull();
+  });
+  it("reads Supabase's description and ends it with a period", () =>
+    expect(linkError("#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired")).toBe(
+      "Email link is invalid or has expired.",
+    ));
+  it("falls back when there is no description", () =>
+    expect(linkError("#error_code=otp_expired")).toBe("This link is invalid or has expired."));
 });

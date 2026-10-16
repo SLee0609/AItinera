@@ -70,6 +70,7 @@ The Vercel project is connected to the GitHub repo with **Root Directory** set t
 - `src/components/TripScreen.tsx`, `TripHeader.tsx`: the shared trip layout, Save and Share buttons, and the guest "Save this trip" dialog.
 - `src/pages/LoginPage.tsx`: `/login?next=…&mode=signin|signup`, with Google or email and password. `next` must be a path on this site.
 - `src/pages/SavedPage.tsx`: `/saved`, the signed-in user's saved itineraries.
+- `src/pages/ResetPasswordPage.tsx`: `/reset-password?next=…`, where password reset emails land; sets the new password. "Forgot password?" on the login page sends the email.
 - `src/auth/`, `src/lib/supabase.ts`: Supabase Auth session state (`useAuth`). Supabase is used only for sign-in.
 - `src/components/ListView.tsx`, `MapView.tsx`, `ItineraryMap.tsx`: the two results views.
 - `src/api/`: API client and the development sample.

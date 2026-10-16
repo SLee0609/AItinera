@@ -39,7 +39,7 @@ Response shapes are defined twice and must stay in sync:
 ## Frontend structure
 
 - Design: "Direction B" (Workbench). Fonts Schibsted Grotesk (display) + Public Sans (body); teal accent `#0F766E`; Tokens are in `src/index.css` (`@theme`).
-- `src/pages/LandingPage.tsx`, `src/pages/TripPage.tsx` (`/trip?city=&days=` generates, then replaces the URL with `/trip/:id`), `SharedTripPage.tsx` (`/trip/:id?view=list|map`), `LoginPage.tsx` (`/login?next=&mode=`), `SavedPage.tsx` (`/saved`). `src/components/TripScreen.tsx` is the shared trip layout; `ListView.tsx`, `MapView.tsx`, `ItineraryMap.tsx`.
+- `src/pages/LandingPage.tsx`, `src/pages/TripPage.tsx` (`/trip?city=&days=` generates, then replaces the URL with `/trip/:id`), `SharedTripPage.tsx` (`/trip/:id?view=list|map`), `LoginPage.tsx` (`/login?next=&mode=`, including "Forgot password?"), `ResetPasswordPage.tsx` (`/reset-password?next=`, where reset emails land), `SavedPage.tsx` (`/saved`). `src/components/TripScreen.tsx` is the shared trip layout; `ListView.tsx`, `MapView.tsx`, `ItineraryMap.tsx`.
 - Supabase in the browser is for sign-in only (`src/lib/supabase.ts`, `src/auth/`); all data goes through the backend. Account UI hides itself when `VITE_SUPABASE_*` is unset.
 - Guest save flow: Save → `/login?next=/trip/<id>?save=1` → after sign-in (including the email-confirmation and Google redirects) the trip page sees `save=1` and saves. `safeNext` limits `next` to same-site paths.
 
