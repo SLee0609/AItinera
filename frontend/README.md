@@ -31,6 +31,8 @@ All `VITE_` variables are built into the browser bundle, so they are public. Non
 | `VITE_GOOGLE_MAPS_MAP_ID` | Map ID from Google Cloud's Map Management, used for Advanced Markers and map styling. Defaults to `DEMO_MAP_ID`, which is only for development. | Production, Preview and Development. Sensitive off. |
 | `VITE_USE_MOCK_API` | `true` uses the sample itinerary instead of the backend. | Production, Preview: `false`. |
 | `VITE_API_BASE_URL` | Backend origin, if it isn't served from the same origin under `/api`. | Not set. |
+| `VITE_SUPABASE_URL` | Supabase project URL, for sign-in. Without it (or the key), accounts and saving are hidden. | Production, Preview (prod project) and Development (dev project). Sensitive off. |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key (`sb_publishable_…`). Public by design; data access goes through the backend. | Same as `VITE_SUPABASE_URL`. |
 
 In Vercel, a variable targets either "Production, Preview" or "Development", so a value used in both is added twice. Sensitive variables can't target Development and can't be pulled.
 
@@ -47,7 +49,7 @@ The Vercel project is connected to the GitHub repo with **Root Directory** set t
 
 `VITE_` values are fixed at build time. After changing one in Vercel, redeploy (Deployments → ⋯ → Redeploy) for it to take effect.
 
-`vercel.json` forwards `/api/*` to the backend at `https://aitinera-api.vercel.app`, so the browser calls the API on the frontend's own domain. Every other path serves `index.html`, so links such as `/trip?city=Paris&days=3` work on refresh.
+`vercel.json` forwards `/api/*` to the backend at `https://aitinera-api.vercel.app`, so the browser calls the API on the frontend's own domain. Every other path serves `index.html`, so links such as `/trip/k3J9xQ2mZpLw` work on refresh.
 
 ## Scripts
 
@@ -58,11 +60,16 @@ The Vercel project is connected to the GitHub repo with **Root Directory** set t
 
 ## Backend contract
 
-`POST /api/itinerary` with `{ "city": "Paris", "days": 3 }` returns an `Itinerary` (see `src/types.ts`) in camelCase. Errors should use FastAPI's `{ "detail": "message" }` shape; the message is shown to the user.
+`POST /api/itinerary` with `{ "city": "Paris", "days": 3 }` returns an `Itinerary` (see `src/types.ts`) in camelCase, including its share `id`. `GET /api/itinerary/:id` returns a stored one, and `/api/saved` lists and changes the signed-in user's saved itineraries (see `backend/README.md`). Requests carry the Supabase access token when the user is signed in. Errors use FastAPI's `{ "detail": "message" }` shape; the message is shown to the user.
 
 ## Layout
 
 - `src/pages/LandingPage.tsx`: destination and trip-length form, example trips, "How it works" and "Examples" dialogs.
-- `src/pages/TripPage.tsx`: fetches the itinerary from `/trip?city=…&days=…&view=list|map` and handles loading and errors.
+- `src/pages/TripPage.tsx`: `/trip?city=…&days=…` generates an itinerary, then replaces the URL with its share link.
+- `src/pages/SharedTripPage.tsx`: `/trip/:id?view=list|map` shows a stored itinerary. `?save=1` saves it once the user is signed in (set by the Save button's sign-in flow).
+- `src/components/TripScreen.tsx`, `TripHeader.tsx`: the shared trip layout, Save and Share buttons, and the guest "Save this trip" dialog.
+- `src/pages/LoginPage.tsx`: `/login?next=…&mode=signin|signup`, with Google or email and password. `next` must be a path on this site.
+- `src/pages/SavedPage.tsx`: `/saved`, the signed-in user's saved itineraries.
+- `src/auth/`, `src/lib/supabase.ts`: Supabase Auth session state (`useAuth`). Supabase is used only for sign-in.
 - `src/components/ListView.tsx`, `MapView.tsx`, `ItineraryMap.tsx`: the two results views.
 - `src/api/`: API client and the development sample.

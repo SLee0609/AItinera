@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
+import AccountNav from "../components/AccountNav";
 import Dialog from "../components/Dialog";
 import DaysStepper from "../components/DaysStepper";
 import Logo from "../components/Logo";
@@ -56,16 +57,20 @@ export default function LandingPage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-canvas bg-[radial-gradient(900px_420px_at_50%_0%,#E6F6F3_0%,transparent_70%)]">
-      <header className="flex h-16 items-center gap-7 px-4 sm:px-10">
+      <header className="flex h-16 items-center gap-5 px-4 sm:gap-7 sm:px-10">
         <Logo />
         <nav className="flex gap-6 text-sm">
           <button type="button" className={navLink} onClick={() => setDialog("how")}>
             How it works
           </button>
-          <button type="button" className={navLink} onClick={() => setDialog("examples")}>
+          {/* The same examples are under the search box, so phones skip this link to fit the header. */}
+          <button type="button" className={`${navLink} max-sm:hidden`} onClick={() => setDialog("examples")}>
             Examples
           </button>
         </nav>
+        <div className="ml-auto">
+          <AccountNav variant="full" />
+        </div>
       </header>
 
       {/* Centered in the space below the header; the extra bottom padding (the header's height) puts it

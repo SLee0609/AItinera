@@ -5,8 +5,17 @@ from fastapi.testclient import TestClient
 
 from app import main, pipeline
 from app.algorithm.geo import walking_estimate_s
+from app.auth import current_user, optional_user
 from app.config import Settings, get_settings
-from app.errors import CityNotFound, NotEnoughAttractions, PlanningTimeout, UpstreamError
+from app.errors import (
+    CityNotFound,
+    ItineraryNotFound,
+    NotEnoughAttractions,
+    NotSignedIn,
+    PlanningTimeout,
+    StorageError,
+    UpstreamError,
+)
 from app.services import gemini, places, routes
 
 SETTINGS = Settings(gemini_api_key="g", google_maps_server_key="m", _env_file=None)
@@ -51,17 +60,84 @@ def fake_google(monkeypatch, paris_city, paris_attractions):
     return calls
 
 
+class FakeStore:
+    """In-memory stand-in for app.services.supabase.Store."""
+
+    def __init__(self):
+        self.itineraries = {}
+        self.saved = {}  # (user_id, itinerary_id) -> saved_at
+        self.fail_inserts = False
+
+    async def insert_itinerary(self, itinerary_id, query, days, data, created_by):
+        if self.fail_inserts:
+            raise StorageError("down")
+        self.itineraries[itinerary_id] = {"query": query, "days": days, "data": data, "created_by": created_by}
+
+    async def get_itinerary(self, itinerary_id):
+        row = self.itineraries.get(itinerary_id)
+        return row and row["data"]
+
+    async def list_saved(self, user_id):
+        rows = [(at, iid) for (uid, iid), at in self.saved.items() if uid == user_id]
+        return [
+            {
+                "id": iid,
+                "city": self.itineraries[iid]["data"]["city"],
+                "days": self.itineraries[iid]["days"],
+                "saved_at": at,
+                "optimized_travel_minutes": self.itineraries[iid]["data"]["optimizedTravelMinutes"],
+                "naive_travel_minutes": self.itineraries[iid]["data"]["naiveTravelMinutes"],
+            }
+            for at, iid in sorted(rows, reverse=True)
+        ]
+
+    async def is_saved(self, user_id, itinerary_id):
+        return (user_id, itinerary_id) in self.saved
+
+    async def save(self, user_id, itinerary_id):
+        if itinerary_id not in self.itineraries:
+            raise ItineraryNotFound()
+        self.saved.setdefault((user_id, itinerary_id), f"2026-10-16T12:00:{len(self.saved):02d}+00:00")
+
+    async def unsave(self, user_id, itinerary_id):
+        self.saved.pop((user_id, itinerary_id), None)
+
+
+@pytest.fixture
+def store(client):
+    fake = FakeStore()
+    main.app.dependency_overrides[main.get_store] = lambda: fake
+    return fake
+
+
+@pytest.fixture
+def sign_in(client):
+    """Call with a user ID to act as that user; None acts as a guest."""
+
+    def act_as(user_id):
+        def required():
+            if user_id is None:
+                raise NotSignedIn()
+            return user_id
+
+        main.app.dependency_overrides[current_user] = required
+        main.app.dependency_overrides[optional_user] = lambda: user_id
+
+    act_as(None)
+    return act_as
+
+
 def test_health(client):
     assert client.get("/api/health").json() == {"status": "ok"}
 
 
-def test_itinerary_shape_matches_frontend_types(client, fake_google):
+def test_itinerary_shape_matches_frontend_types(client, fake_google, store, sign_in):
     response = client.post("/api/itinerary", json={"city": "  Paris ", "days": 3})
     assert response.status_code == 200, response.text
     body = response.json()
 
     # Field names from frontend/src/types.ts.
-    assert set(body) == {"city", "travelMode", "dayPlans", "optimizedTravelMinutes", "naiveTravelMinutes"}
+    assert set(body) == {"id", "city", "travelMode", "dayPlans", "optimizedTravelMinutes", "naiveTravelMinutes"}
     assert body["travelMode"] == "TRANSIT" and body["city"] == "Paris, France"
     for day in body["dayPlans"]:
         assert set(day) <= {"day", "title", "stops", "legs", "travelMinutes"}
@@ -184,3 +260,94 @@ def test_day_title(paris_attractions):
     marais = [a for a in paris_attractions if a.neighborhood in {"Le Marais", "Île de la Cité"}]
     assert pipeline.day_title(marais) == "Le Marais & Île de la Cité"
     assert pipeline.day_title([]) is None
+
+
+def test_generated_itineraries_are_stored_and_served_by_id(client, fake_google, store, sign_in):
+    created = client.post("/api/itinerary", json={"city": " Paris ", "days": 3}).json()
+    itinerary_id = created["id"]
+    assert main.ITINERARY_ID.fullmatch(itinerary_id)
+
+    row = store.itineraries[itinerary_id]
+    assert (row["query"], row["days"], row["created_by"]) == ("Paris", 3, None)
+    assert "id" not in row["data"]
+
+    response = client.get(f"/api/itinerary/{itinerary_id}")
+    assert response.status_code == 200
+    assert response.json() == created
+
+
+def test_signed_in_generations_record_the_creator(client, fake_google, store, sign_in):
+    sign_in("user-1")
+    itinerary_id = client.post("/api/itinerary", json={"city": "Paris", "days": 1}).json()["id"]
+    assert store.itineraries[itinerary_id]["created_by"] == "user-1"
+
+
+def test_storage_failure_still_returns_the_itinerary(client, fake_google, store, sign_in):
+    store.fail_inserts = True
+    response = client.post("/api/itinerary", json={"city": "Paris", "days": 2})
+    assert response.status_code == 200
+    assert "id" not in response.json()
+
+
+def test_generation_works_without_supabase(client, fake_google):
+    response = client.post("/api/itinerary", json={"city": "Paris", "days": 2})
+    assert response.status_code == 200
+    assert "id" not in response.json()
+
+
+@pytest.mark.parametrize("itinerary_id", ["abcdefghijkl", "short", "abc,def.ghij", "a" * 13])
+def test_unknown_itinerary_ids_are_not_found(client, store, itinerary_id):
+    response = client.get(f"/api/itinerary/{itinerary_id}")
+    assert response.status_code == 404
+    assert response.json() == {"detail": ItineraryNotFound().message}
+
+
+def test_saved_endpoints_require_sign_in(client, store, sign_in):
+    for method, path in [
+        ("GET", "/api/saved"),
+        ("GET", "/api/saved/abcdefghijkl"),
+        ("PUT", "/api/saved/abcdefghijkl"),
+        ("DELETE", "/api/saved/abcdefghijkl"),
+    ]:
+        response = client.request(method, path)
+        assert response.status_code == 401, path
+        assert response.json() == {"detail": "Sign in to save itineraries."}
+
+
+def test_save_list_and_unsave(client, fake_google, store, sign_in):
+    first = client.post("/api/itinerary", json={"city": "Paris", "days": 2}).json()
+    second = client.post("/api/itinerary", json={"city": "Paris", "days": 3}).json()
+    sign_in("user-1")
+
+    assert client.get(f"/api/saved/{first['id']}").json() == {"saved": False}
+    assert client.put(f"/api/saved/{first['id']}").json() == {"saved": True}
+    assert client.put(f"/api/saved/{first['id']}").json() == {"saved": True}  # idempotent
+    assert client.put(f"/api/saved/{second['id']}").json() == {"saved": True}
+    assert client.get(f"/api/saved/{first['id']}").json() == {"saved": True}
+
+    saved = client.get("/api/saved").json()
+    assert [s["id"] for s in saved] == [second["id"], first["id"]]  # newest first
+    # Field names from SavedItinerarySummary in frontend/src/types.ts.
+    assert set(saved[0]) == {"id", "city", "days", "savedAt", "optimizedTravelMinutes", "naiveTravelMinutes"}
+    assert saved[0]["days"] == 3 and saved[0]["optimizedTravelMinutes"] == second["optimizedTravelMinutes"]
+
+    # Other users don't see it.
+    sign_in("user-2")
+    assert client.get("/api/saved").json() == []
+
+    sign_in("user-1")
+    assert client.delete(f"/api/saved/{first['id']}").json() == {"saved": False}
+    assert [s["id"] for s in client.get("/api/saved").json()] == [second["id"]]
+
+
+def test_saving_an_unknown_itinerary_is_not_found(client, store, sign_in):
+    sign_in("user-1")
+    assert client.put("/api/saved/abcdefghijkl").status_code == 404
+    assert client.put("/api/saved/bad").status_code == 404
+
+
+def test_saved_endpoints_without_supabase_are_unavailable(client, sign_in):
+    sign_in("user-1")
+    response = client.get("/api/saved")
+    assert response.status_code == 503
+    assert response.json() == {"detail": StorageError().message}

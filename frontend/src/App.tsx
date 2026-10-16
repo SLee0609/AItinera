@@ -1,5 +1,8 @@
 import { Navigate, Route, Routes } from "react-router";
 import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
+import SavedPage from "./pages/SavedPage";
+import SharedTripPage from "./pages/SharedTripPage";
 import TripPage from "./pages/TripPage";
 
 export default function App() {
@@ -7,6 +10,9 @@ export default function App() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/trip" element={<TripPage />} />
+      <Route path="/trip/:id" element={<SharedTripPage />} />
+      <Route path="/saved" element={<SavedPage />} />
+      <Route path="/login" element={<LoginPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

@@ -25,7 +25,11 @@ Browser ──> Vercel: frontend (React + Vite)         Google Maps JavaScript A
             Vercel: backend (FastAPI)  ──> Gemini API (attractions)
                                        ──> Places API (New) (verification)
                                        ──> Routes API (transit times, route lines)
+                                       ──> Supabase Postgres (stored and saved itineraries)
+Browser ──> Supabase Auth (sign-in; Google or email)
 ```
+
+Every generated itinerary is stored with a 12-character ID, and its share link (`/trip/<id>`) shows exactly that trip. Signed-in users can save itineraries and find them again under Saved itineraries.
 
 | | Stack | Folder | Vercel project |
 | --- | --- | --- | --- |
@@ -37,13 +41,14 @@ The frontend calls `/api/*` on its own domain, and `frontend/vercel.json` forwar
 ## Repository layout
 
 ```
-frontend/   React app: landing page, results list view, results map view
-backend/    FastAPI app: POST /api/itinerary and the itinerary algorithm
+frontend/   React app: landing page, results list and map views, sign-in, saved itineraries
+backend/    FastAPI app: /api/itinerary, /api/saved and the itinerary algorithm
   app/algorithm/   clustering, ordering, baseline (pure Python, no I/O)
-  app/services/    Gemini, Places and Routes clients
+  app/services/    Gemini, Places, Routes and Supabase clients
+supabase/   database migrations and Supabase project setup
 ```
 
-Each folder has its own README with setup details: [frontend/README.md](frontend/README.md), [backend/README.md](backend/README.md).
+Each folder has its own README with setup details: [frontend/README.md](frontend/README.md), [backend/README.md](backend/README.md), [supabase/README.md](supabase/README.md).
 
 ## Local development
 
@@ -82,8 +87,10 @@ cd frontend && npm test && npm run build
 | `VITE_GOOGLE_MAPS_API_KEY` | Frontend map | Public by design; restricted to the site's domains and the Maps JavaScript API |
 | `GEMINI_API_KEY` | Backend | Secret |
 | `GOOGLE_MAPS_SERVER_KEY` | Backend | Secret; restricted to Places API (New) and Routes API |
+| `SUPABASE_SECRET_KEY` | Backend (with `SUPABASE_URL`) | Secret; bypasses row level security |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Frontend sign-in (with `VITE_SUPABASE_URL`) | Public by design; can't read the itinerary tables |
 
-Production keys are Sensitive Vercel variables. Development uses separate keys, stored as Development variables in Vercel.
+Production keys are Sensitive Vercel variables. Development uses separate keys, stored as Development variables in Vercel. Supabase has separate dev and prod projects.
 
 ## Deployment
 

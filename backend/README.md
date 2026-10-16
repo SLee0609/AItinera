@@ -38,12 +38,14 @@ To use it from the frontend, run `npm run dev` in `frontend/`. Vite proxies `/ap
 
 ## Keys
 
-The backend needs two keys. Both are server-only and are never sent to the browser.
+The backend needs these keys. All are server-only and are never sent to the browser.
 
 | Variable | What it is |
 | --- | --- |
 | `GEMINI_API_KEY` | Google AI Studio → Get API key, in a Google Cloud project with billing. |
 | `GOOGLE_MAPS_SERVER_KEY` | Google Cloud Console → Credentials. No application restriction; API restriction: **Places API (New)** and **Routes API** only. Separate from the frontend's `VITE_GOOGLE_MAPS_API_KEY`. |
+| `SUPABASE_URL` | `https://<ref>.supabase.co`. Used to store itineraries and to verify sign-in tokens. See [`supabase/README.md`](../supabase/README.md). |
+| `SUPABASE_SECRET_KEY` | Supabase → Project Settings → API Keys → secret key (`sb_secret_…`). Bypasses row level security. Optional: without the two Supabase variables, itineraries are generated but not stored, so they have no share link. |
 
 Production and development use **different keys**, both stored in the `aitinera-api` Vercel project (Settings → Environment Variables):
 
@@ -85,10 +87,13 @@ Optional tuning variables and their defaults are listed in `.env.example` and `a
 
 Request: `{"city": "Paris", "days": 3}`. `city` is 1–100 characters; `days` is an integer from 1 to 7.
 
+Optional `Authorization: Bearer <Supabase access token>`; if valid, the stored itinerary records its creator.
+
 Response `200`: an `Itinerary` in camelCase, matching `frontend/src/types.ts`:
 
 ```jsonc
 {
+  "id": "k3J9xQ2mZpLw",
   "city": "Paris, France",
   "travelMode": "TRANSIT",
   "optimizedTravelMinutes": 129,
@@ -106,7 +111,7 @@ Response `200`: an `Itinerary` in camelCase, matching `frontend/src/types.ts`:
 }
 ```
 
-`legs[i]` goes from `stops[i]` to `stops[i + 1]`. `title` and `polyline` may be missing.
+`legs[i]` goes from `stops[i]` to `stops[i + 1]`. `title` and `polyline` may be missing. `id` is the stored itinerary's share ID; it's missing if storing failed or Supabase isn't configured.
 
 Errors return `{"detail": "<message for the user>"}`:
 
@@ -117,6 +122,21 @@ Errors return `{"detail": "<message for the user>"}`:
 | 502 | Gemini or Google Maps request failed |
 | 504 | Planning took longer than `PIPELINE_TIMEOUT_S` (55 s) |
 | 500 | Keys not configured, or an unexpected error |
+
+### `GET /api/itinerary/{id}`
+
+A stored itinerary, exactly as `POST` returned it. `404` if the ID doesn't exist, `503` if Supabase can't be reached.
+
+### Saved itineraries
+
+These need `Authorization: Bearer <Supabase access token>` and return `401` without a valid one.
+
+| Request | Response |
+| --- | --- |
+| `GET /api/saved` | `SavedItinerarySummary[]`, newest first: `{id, city, days, savedAt, optimizedTravelMinutes, naiveTravelMinutes}` |
+| `GET /api/saved/{id}` | `{"saved": true \| false}` |
+| `PUT /api/saved/{id}` | Saves it (saving twice is fine). `{"saved": true}`; `404` if the itinerary doesn't exist |
+| `DELETE /api/saved/{id}` | Removes it. `{"saved": false}` |
 
 ### `GET /api/health`
 

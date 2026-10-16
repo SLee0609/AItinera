@@ -1,5 +1,6 @@
 """API request and response models. JSON uses camelCase to match `frontend/src/types.ts`."""
 
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -51,8 +52,23 @@ class DayPlan(CamelModel):
 
 
 class Itinerary(CamelModel):
+    # Set once the itinerary is stored; share links use it. Missing if storing failed.
+    id: str | None = None
     city: str
     travel_mode: Literal["TRANSIT"] = "TRANSIT"
     day_plans: list[DayPlan]
     optimized_travel_minutes: int
     naive_travel_minutes: int
+
+
+class SavedItinerarySummary(CamelModel):
+    id: str
+    city: str
+    days: int
+    saved_at: datetime
+    optimized_travel_minutes: int
+    naive_travel_minutes: int
+
+
+class SavedStatus(CamelModel):
+    saved: bool

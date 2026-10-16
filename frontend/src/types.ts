@@ -1,5 +1,5 @@
 /**
- * Shapes exchanged with the FastAPI backend (`POST /api/itinerary`).
+ * Shapes exchanged with the FastAPI backend (`/api/itinerary`, `/api/saved`).
  * The backend serializes these fields in camelCase.
  */
 
@@ -42,6 +42,8 @@ export interface DayPlan {
 }
 
 export interface Itinerary {
+  /** Stored itinerary ID, used in share links (`/trip/:id`). Missing if the backend couldn't store it. */
+  id?: string;
   /** Resolved destination name, such as "Paris, France". */
   city: string;
   travelMode: TravelMode;
@@ -49,4 +51,19 @@ export interface Itinerary {
   optimizedTravelMinutes: number;
   /** Travel time for the same attractions in the order the LLM suggested them, cut into consecutive days. */
   naiveTravelMinutes: number;
+}
+
+/** One entry of `GET /api/saved`, newest first. */
+export interface SavedItinerarySummary {
+  id: string;
+  city: string;
+  days: number;
+  /** ISO 8601 timestamp. */
+  savedAt: string;
+  optimizedTravelMinutes: number;
+  naiveTravelMinutes: number;
+}
+
+export interface SavedStatus {
+  saved: boolean;
 }

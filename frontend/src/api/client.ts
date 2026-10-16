@@ -1,25 +1,38 @@
-import type { Itinerary, ItineraryRequest } from "../types";
+import type { Itinerary, ItineraryRequest, SavedItinerarySummary, SavedStatus } from "../types";
+import { accessToken } from "../lib/supabase";
 import { mockItinerary } from "./mock";
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
 export const USING_MOCK_API = import.meta.env.VITE_USE_MOCK_API === "true";
 
-export class ApiError extends Error {}
+export class ApiError extends Error {
+  /** HTTP status, or 0 when the service couldn't be reached. */
+  readonly status: number;
 
-export async function fetchItinerary(request: ItineraryRequest, signal?: AbortSignal): Promise<Itinerary> {
-  if (USING_MOCK_API) return mockItinerary(request, signal);
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
+/** Calls the backend, sending the signed-in user's access token if there is one. */
+async function request<T>(method: string, path: string, options: { body?: unknown; signal?: AbortSignal } = {}): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (options.body !== undefined) headers["Content-Type"] = "application/json";
+  const token = await accessToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
 
   let response: Response;
   try {
-    response = await fetch(`${API_BASE}/api/itinerary`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(request),
-      signal,
+    response = await fetch(`${API_BASE}${path}`, {
+      method,
+      headers,
+      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      signal: options.signal,
     });
   } catch (err) {
-    if (signal?.aborted) throw err;
-    throw new ApiError("Couldn't reach the itinerary service. Check your connection and try again.");
+    if (options.signal?.aborted) throw err;
+    throw new ApiError("Couldn't reach the itinerary service. Check your connection and try again.", 0);
   }
 
   if (!response.ok) {
@@ -32,8 +45,26 @@ export async function fetchItinerary(request: ItineraryRequest, signal?: AbortSi
     }
     throw new ApiError(
       typeof detail === "string" ? detail : `The itinerary service returned an error (${response.status}). Try again.`,
+      response.status,
     );
   }
 
-  return (await response.json()) as Itinerary;
+  return (await response.json()) as T;
 }
+
+export function fetchItinerary(req: ItineraryRequest, signal?: AbortSignal): Promise<Itinerary> {
+  if (USING_MOCK_API) return mockItinerary(req, signal);
+  return request("POST", "/api/itinerary", { body: req, signal });
+}
+
+export const getItinerary = (id: string, signal?: AbortSignal) =>
+  request<Itinerary>("GET", `/api/itinerary/${encodeURIComponent(id)}`, { signal });
+
+export const listSaved = (signal?: AbortSignal) => request<SavedItinerarySummary[]>("GET", "/api/saved", { signal });
+
+export const getSavedStatus = (id: string, signal?: AbortSignal) =>
+  request<SavedStatus>("GET", `/api/saved/${encodeURIComponent(id)}`, { signal });
+
+export const saveItinerary = (id: string) => request<SavedStatus>("PUT", `/api/saved/${encodeURIComponent(id)}`);
+
+export const unsaveItinerary = (id: string) => request<SavedStatus>("DELETE", `/api/saved/${encodeURIComponent(id)}`);

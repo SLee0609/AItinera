@@ -45,3 +45,25 @@ class NotConfigured(ItineraryError):
 
     def __init__(self) -> None:
         super().__init__("The itinerary service isn't configured yet. Try again later.")
+
+
+class ItineraryNotFound(ItineraryError):
+    status_code = 404
+
+    def __init__(self) -> None:
+        super().__init__("This itinerary link doesn't exist or was removed. Check that you copied the whole link.")
+
+
+class NotSignedIn(ItineraryError):
+    status_code = 401
+
+    def __init__(self) -> None:
+        super().__init__("Sign in to save itineraries.")
+
+
+class StorageError(ItineraryError):
+    status_code = 503
+
+    def __init__(self, detail: str = ""):
+        super().__init__("Saved and shared itineraries are unavailable right now. Try again in a minute.")
+        self.detail = detail  # for logs only

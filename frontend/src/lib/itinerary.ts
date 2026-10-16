@@ -34,3 +34,8 @@ export function tripSearch(city: string, days: number, view?: "list" | "map") {
   if (view) params.set("view", view);
   return `/trip?${params}`;
 }
+
+/** Share link path for a stored itinerary. */
+export function tripUrl(id: string, view?: "list" | "map") {
+  return `/trip/${encodeURIComponent(id)}${view === "map" ? "?view=map" : ""}`;
+}
