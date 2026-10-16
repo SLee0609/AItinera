@@ -81,7 +81,7 @@ function SavedList() {
         <h1 className="font-display text-[32px] font-bold tracking-tight">Saved itineraries</h1>
         {state.status === "success" && state.trips.length > 0 && (
           <p className="text-sm text-sub">
-            {state.trips.length} {state.trips.length === 1 ? "trip" : "trips"} · newest first
+            {state.trips.length} {state.trips.length === 1 ? "trip saved" : "trips saved"}
           </p>
         )}
       </div>
@@ -109,7 +109,7 @@ function SavedList() {
           </span>
           <p className="mt-1.5 font-display text-xl font-bold">No saved trips yet</p>
           <p className="max-w-[360px] text-sm leading-normal text-sub">
-            Plan a trip and click Save to keep it here. Saved trips stay exactly as they were generated.
+            Plan a trip and click Save to keep it here.
           </p>
           <Link to="/" className="mt-2 flex items-center gap-2 rounded-[10px] bg-accent px-4 py-2.5 text-sm font-semibold text-white hover:bg-accent-hover">
             Plan a trip <ArrowRightIcon size={16} />
@@ -130,7 +130,7 @@ function SavedList() {
                   <span className="grid min-w-0 flex-1 gap-[3px]">
                     <span className="truncate font-display text-[17px] font-bold">{trip.city}</span>
                     <span className="text-[13px] text-sub">
-                      {pluralDays(trip.days)} · {formatTravel(trip.optimizedTravelMinutes)} of travel
+                      {pluralDays(trip.days)} · {trip.stopCount} stops · {formatTravel(trip.optimizedTravelMinutes)} of travel
                     </span>
                   </span>
                   <span className="grid shrink-0 justify-items-end gap-[3px]">

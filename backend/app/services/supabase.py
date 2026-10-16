@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 FOREIGN_KEY_VIOLATION = "23503"
 
 SAVED_SELECT = (
-    "saved_at,itinerary:itineraries(id,city,days,"
+    "saved_at,itinerary:itineraries(id,city,days,stops:stop_count,"
     "optimized:data->optimizedTravelMinutes,naive:data->naiveTravelMinutes)"
 )
 
@@ -60,6 +60,7 @@ class Store:
                 "id": r["itinerary"]["id"],
                 "city": r["itinerary"]["city"],
                 "days": r["itinerary"]["days"],
+                "stop_count": r["itinerary"]["stops"],
                 "saved_at": r["saved_at"],
                 "optimized_travel_minutes": r["itinerary"]["optimized"],
                 "naive_travel_minutes": r["itinerary"]["naive"],

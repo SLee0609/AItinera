@@ -65,6 +65,7 @@ class SavedItinerarySummary(CamelModel):
     id: str
     city: str
     days: int
+    stop_count: int
     saved_at: datetime
     optimized_travel_minutes: int
     naive_travel_minutes: int

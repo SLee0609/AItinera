@@ -50,7 +50,14 @@ async def test_list_saved_flattens_rows_and_filters_by_user(store):
     rows = [
         {
             "saved_at": "2026-10-16T12:00:00+00:00",
-            "itinerary": {"id": "abcdefghijkl", "city": "Paris", "days": 3, "optimized": 185, "naive": 290},
+            "itinerary": {
+                "id": "abcdefghijkl",
+                "city": "Paris",
+                "days": 3,
+                "stops": 12,
+                "optimized": 185,
+                "naive": 290,
+            },
         },
         {"saved_at": "2026-10-15T12:00:00+00:00", "itinerary": None},
     ]
@@ -60,6 +67,7 @@ async def test_list_saved_flattens_rows_and_filters_by_user(store):
             "id": "abcdefghijkl",
             "city": "Paris",
             "days": 3,
+            "stop_count": 12,
             "saved_at": "2026-10-16T12:00:00+00:00",
             "optimized_travel_minutes": 185,
             "naive_travel_minutes": 290,
@@ -68,6 +76,7 @@ async def test_list_saved_flattens_rows_and_filters_by_user(store):
     params = route.calls.last.request.url.params
     assert params["user_id"] == "eq.user-1"
     assert params["order"] == "saved_at.desc"
+    assert "stops:stop_count" in params["select"]
 
 
 @respx.mock

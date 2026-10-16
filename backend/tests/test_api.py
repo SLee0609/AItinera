@@ -84,6 +84,7 @@ class FakeStore:
                 "id": iid,
                 "city": self.itineraries[iid]["data"]["city"],
                 "days": self.itineraries[iid]["days"],
+                "stop_count": sum(len(d["stops"]) for d in self.itineraries[iid]["data"]["dayPlans"]),
                 "saved_at": at,
                 "optimized_travel_minutes": self.itineraries[iid]["data"]["optimizedTravelMinutes"],
                 "naive_travel_minutes": self.itineraries[iid]["data"]["naiveTravelMinutes"],
@@ -336,8 +337,17 @@ def test_save_list_and_unsave(client, fake_google, store, sign_in):
     saved = client.get("/api/saved").json()
     assert [s["id"] for s in saved] == [second["id"], first["id"]]  # newest first
     # Field names from SavedItinerarySummary in frontend/src/types.ts.
-    assert set(saved[0]) == {"id", "city", "days", "savedAt", "optimizedTravelMinutes", "naiveTravelMinutes"}
+    assert set(saved[0]) == {
+        "id",
+        "city",
+        "days",
+        "stopCount",
+        "savedAt",
+        "optimizedTravelMinutes",
+        "naiveTravelMinutes",
+    }
     assert saved[0]["days"] == 3 and saved[0]["optimizedTravelMinutes"] == second["optimizedTravelMinutes"]
+    assert saved[0]["stopCount"] == sum(len(d["stops"]) for d in second["dayPlans"])
 
     # Other users don't see it.
     sign_in("user-2")

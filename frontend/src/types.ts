@@ -58,6 +58,7 @@ export interface SavedItinerarySummary {
   id: string;
   city: string;
   days: number;
+  stopCount: number;
   /** ISO 8601 timestamp. */
   savedAt: string;
   optimizedTravelMinutes: number;
