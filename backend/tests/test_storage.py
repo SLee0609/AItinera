@@ -111,3 +111,24 @@ async def test_http_and_network_failures_become_storage_errors(store):
     with pytest.raises(StorageError) as exc:
         await store.get_itinerary("abcdefghijkl")
     assert "ConnectError" in exc.value.detail
+
+
+@respx.mock
+async def test_delete_user_calls_the_auth_admin_api(store):
+    route = respx.delete(f"{BASE}/auth/v1/admin/users/user-1").mock(return_value=httpx.Response(200, json={}))
+    await store.delete_user("user-1")
+    headers = route.calls.last.request.headers
+    assert headers["apikey"] == "sb_secret_x"
+    assert headers["Authorization"] == "Bearer sb_secret_x"
+
+
+@respx.mock
+async def test_deleting_a_missing_user_succeeds_and_other_failures_raise(store):
+    route = respx.delete(f"{BASE}/auth/v1/admin/users/user-1")
+    route.mock(return_value=httpx.Response(404, json={"msg": "User not found"}))
+    await store.delete_user("user-1")
+
+    route.mock(return_value=httpx.Response(403, json={"msg": "not allowed"}))
+    with pytest.raises(StorageError) as exc:
+        await store.delete_user("user-1")
+    assert "403" in exc.value.detail

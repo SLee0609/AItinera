@@ -18,6 +18,7 @@ from .schemas import (
     MAX_CITY_LENGTH,
     MAX_DAYS,
     MIN_DAYS,
+    AccountDeletion,
     Itinerary,
     ItineraryRequest,
     SavedItinerarySummary,
@@ -153,3 +154,12 @@ async def save_itinerary(itinerary_id: str, user_id: UserId, store: RequiredStor
 async def unsave_itinerary(itinerary_id: str, user_id: UserId, store: RequiredStore) -> SavedStatus:
     await store.unsave(user_id, check_id(itinerary_id))
     return SavedStatus(saved=False)
+
+
+@app.delete("/api/account", response_model=AccountDeletion)
+async def delete_account(user_id: UserId, store: RequiredStore) -> AccountDeletion:
+    """Deletes the signed-in user's account. Their access token stays valid until it expires (about an hour),
+    so the frontend signs out right after; a later request with it can't recreate any data for the user."""
+    await store.delete_user(user_id)
+    log.info("Deleted account %s", user_id)
+    return AccountDeletion(deleted=True)

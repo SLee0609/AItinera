@@ -18,6 +18,7 @@ Run the relevant tests, lint and build after changes.
 - `POST /api/itinerary` `{city, days}` → `Itinerary`. Every generated itinerary is stored and gets `id`, a 12-character share ID (missing if storing failed).
 - `GET /api/itinerary/{id}` → the stored `Itinerary`. Frontend share link: `/trip/:id`.
 - `GET /api/saved`, `GET|PUT|DELETE /api/saved/{id}`: the signed-in user's saved itineraries; need `Authorization: Bearer <Supabase access token>`.
+- `DELETE /api/account`: deletes the signed-in user. Generated itineraries are kept (`created_by` set null) so share links and other users' saves survive; don't change that cascade.
 
 Response shapes are defined twice and must stay in sync:
 - `frontend/src/types.ts` (TypeScript)

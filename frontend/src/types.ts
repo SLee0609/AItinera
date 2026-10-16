@@ -67,3 +67,7 @@ export interface SavedItinerarySummary {
 export interface SavedStatus {
   saved: boolean;
 }
+
+export interface AccountDeletion {
+  deleted: boolean;
+}

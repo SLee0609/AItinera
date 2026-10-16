@@ -72,3 +72,7 @@ class SavedItinerarySummary(CamelModel):
 
 class SavedStatus(CamelModel):
     saved: bool
+
+
+class AccountDeletion(CamelModel):
+    deleted: bool

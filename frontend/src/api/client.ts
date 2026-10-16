@@ -1,4 +1,4 @@
-import type { Itinerary, ItineraryRequest, SavedItinerarySummary, SavedStatus } from "../types";
+import type { AccountDeletion, Itinerary, ItineraryRequest, SavedItinerarySummary, SavedStatus } from "../types";
 import { accessToken } from "../lib/supabase";
 import { mockItinerary } from "./mock";
 
@@ -68,3 +68,6 @@ export const getSavedStatus = (id: string, signal?: AbortSignal) =>
 export const saveItinerary = (id: string) => request<SavedStatus>("PUT", `/api/saved/${encodeURIComponent(id)}`);
 
 export const unsaveItinerary = (id: string) => request<SavedStatus>("DELETE", `/api/saved/${encodeURIComponent(id)}`);
+
+/** Deletes the signed-in user's account. Itineraries they generated stay available through their share links. */
+export const deleteAccount = () => request<AccountDeletion>("DELETE", "/api/account");

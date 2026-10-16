@@ -86,7 +86,12 @@ export default function LoginPage() {
     if (err) setError(err.message);
     // A session means email confirmation is off for this project.
     else if (data.session) navigate(next, { replace: true });
-    else setSentTo(trimmed);
+    // For an email that already has a confirmed account, Supabase reports success with no identities and sends
+    // nothing, so it can't be told apart from a new sign-up by the error alone.
+    else if (data.user?.identities?.length === 0) {
+      setMode("signin");
+      setError("An account with this email already exists. Sign in instead, or use Continue with Google if you signed up with Google.");
+    } else setSentTo(trimmed);
   };
 
   const resend = async () => {

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import AccountNav from "../components/AccountNav";
 import Dialog from "../components/Dialog";
 import DaysStepper from "../components/DaysStepper";
@@ -140,6 +140,12 @@ export default function LandingPage() {
           ))}
         </div>
       </main>
+
+      <footer className="pb-5 text-center text-xs text-sub">
+        <Link to="/privacy" className="hover:text-ink">
+          Privacy policy
+        </Link>
+      </footer>
 
       <Dialog open={dialog === "how"} onClose={() => setDialog(null)} title="How it works">
         <p className="-mt-2 text-sm text-sub">

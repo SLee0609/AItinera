@@ -137,6 +137,7 @@ These need `Authorization: Bearer <Supabase access token>` and return `401` with
 | `GET /api/saved/{id}` | `{"saved": true \| false}` |
 | `PUT /api/saved/{id}` | Saves it (saving twice is fine). `{"saved": true}`; `404` if the itinerary doesn't exist |
 | `DELETE /api/saved/{id}` | Removes it. `{"saved": false}` |
+| `DELETE /api/account` | Deletes the user through the Supabase Auth admin API. `{"deleted": true}`. Their profile and saved list are deleted with them; itineraries they generated stay as anonymous share links (`created_by` becomes null), so other users' saves and existing links keep working. |
 
 ### `GET /api/health`
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router";
-import { BookmarkIcon, ChevronIcon, LogOutIcon } from "./icons";
+import DeleteAccountDialog from "./DeleteAccountDialog";
+import { BookmarkIcon, ChevronIcon, LogOutIcon, TrashIcon } from "./icons";
 import { displayName, initials, useAuth } from "../auth/context";
 import { loginUrl } from "../lib/auth";
 
@@ -51,6 +52,7 @@ export default function AccountNav({ variant = "compact" }: AccountNavProps) {
 function AccountMenu() {
   const { user, signOut } = useAuth();
   const [open, setOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -104,8 +106,20 @@ function AccountMenu() {
           >
             <LogOutIcon size={16} /> Sign out
           </button>
+          <button
+            role="menuitem"
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              setDeleting(true);
+            }}
+            className={`${itemClass} mt-1 border-t border-line pt-2.5 text-red-700 hover:bg-red-50`}
+          >
+            <TrashIcon size={16} /> Delete account
+          </button>
         </div>
       )}
+      <DeleteAccountDialog open={deleting} onClose={() => setDeleting(false)} email={user.email} />
     </div>
   );
 }

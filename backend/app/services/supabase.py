@@ -1,4 +1,4 @@
-"""Stored and saved itineraries in Supabase, through its REST API (PostgREST).
+"""Stored and saved itineraries in Supabase, through its REST API (PostgREST), and account deletion.
 
 Uses the project's secret key, which bypasses row level security, so every query here must filter by the
 signed-in user where it matters. IDs are validated by the caller before they reach a filter.
@@ -26,7 +26,10 @@ class Store:
     def __init__(self, client: httpx.AsyncClient, base_url: str, secret_key: str):
         self._client = client
         self._rest = f"{base_url}/rest/v1"
+        self._auth_admin = f"{base_url}/auth/v1/admin/users"
         self._headers = {"apikey": secret_key}
+        # The Auth admin API also wants the key as a bearer token, as supabase-js sends it.
+        self._admin_headers = {"apikey": secret_key, "Authorization": f"Bearer {secret_key}"}
 
     async def insert_itinerary(
         self, itinerary_id: str, query: str, days: int, data: dict[str, Any], created_by: str | None
@@ -89,6 +92,18 @@ class Store:
             params={"user_id": f"eq.{user_id}", "itinerary_id": f"eq.{itinerary_id}"},
             prefer="return=minimal",
         )
+
+    async def delete_user(self, user_id: str) -> None:
+        """Deletes the Supabase Auth user. The database cascades to their profile and saved list; itineraries they
+        generated stay as anonymous share links (`created_by` is set to null), so other users' saves keep working.
+        Deleting a user who no longer exists counts as success."""
+        url = f"{self._auth_admin}/{user_id}"
+        try:
+            response = await self._client.delete(url, headers=self._admin_headers)
+        except httpx.HTTPError as err:
+            raise StorageError(f"DELETE auth user: {err!r}") from err
+        if response.status_code >= 400 and response.status_code != 404:
+            raise StorageError(f"DELETE auth user returned {response.status_code}: {_json_or_text(response)}")
 
     async def _request(
         self,

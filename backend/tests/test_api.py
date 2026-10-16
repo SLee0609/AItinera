@@ -102,6 +102,13 @@ class FakeStore:
     async def unsave(self, user_id, itinerary_id):
         self.saved.pop((user_id, itinerary_id), None)
 
+    async def delete_user(self, user_id):
+        # Mirrors the database: the user's saves cascade, their itineraries lose `created_by`.
+        self.saved = {k: v for k, v in self.saved.items() if k[0] != user_id}
+        for row in self.itineraries.values():
+            if row["created_by"] == user_id:
+                row["created_by"] = None
+
 
 @pytest.fixture
 def store(client):
@@ -308,6 +315,7 @@ def test_saved_endpoints_require_sign_in(client, store, sign_in):
         ("GET", "/api/saved/abcdefghijkl"),
         ("PUT", "/api/saved/abcdefghijkl"),
         ("DELETE", "/api/saved/abcdefghijkl"),
+        ("DELETE", "/api/account"),
     ]:
         response = client.request(method, path)
         assert response.status_code == 401, path
@@ -351,3 +359,22 @@ def test_saved_endpoints_without_supabase_are_unavailable(client, sign_in):
     response = client.get("/api/saved")
     assert response.status_code == 503
     assert response.json() == {"detail": StorageError().message}
+
+
+def test_deleting_an_account_keeps_its_itineraries_for_others(client, fake_google, store, sign_in):
+    sign_in("user-1")
+    created = client.post("/api/itinerary", json={"city": "Paris", "days": 2}).json()
+    client.put(f"/api/saved/{created['id']}")
+    sign_in("user-2")
+    client.put(f"/api/saved/{created['id']}")
+
+    sign_in("user-1")
+    response = client.delete("/api/account")
+    assert response.status_code == 200
+    assert response.json() == {"deleted": True}
+
+    # The share link still works, and user-2's save is untouched.
+    assert client.get(f"/api/itinerary/{created['id']}").json() == created
+    assert store.itineraries[created["id"]]["created_by"] is None
+    sign_in("user-2")
+    assert [s["id"] for s in client.get("/api/saved").json()] == [created["id"]]
