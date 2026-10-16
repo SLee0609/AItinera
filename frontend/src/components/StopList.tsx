@@ -1,5 +1,5 @@
-import { ClockIcon } from "./icons";
-import { formatVisit } from "../lib/format";
+import StopChips from "./StopChips";
+import TruncatedText from "./TruncatedText";
 import type { DayPlan } from "../types";
 
 interface StopListProps {
@@ -20,38 +20,42 @@ export default function StopList({ day, color, modePhrase, compact, selectedInde
         const body = (
           <>
             <span
-              className="grid size-6 place-items-center rounded-[7px] text-xs font-bold text-white"
+              className="row-span-2 grid size-6 place-items-center rounded-[7px] text-xs font-bold text-white"
               style={{ background: color }}
               aria-hidden="true"
             >
               {i + 1}
             </span>
-            <div className="min-w-0">
-              <h4 className="text-sm font-semibold">{stop.name}</h4>
-              <p className="text-xs leading-snug text-sub">
-                {compact ? (leg ? `Then ${leg.durationMinutes} min ${modePhrase}` : "Last stop") : stop.description}
-              </p>
-            </div>
-            <span className="flex items-center gap-1 rounded-full bg-[#F1F3F2] px-2 py-0.5 text-[11.5px] font-semibold whitespace-nowrap text-[#3B4249]">
-              <ClockIcon size={11} /> {formatVisit(stop.visitMinutes)}
-            </span>
+            <h4 className="min-w-0 text-sm font-semibold">
+              {compact ? <TruncatedText text={stop.name} className="block" /> : stop.name}
+            </h4>
+            <p className="col-[2/-1] min-w-0 text-xs leading-snug text-sub">
+              {compact ? (leg ? `Then ${leg.durationMinutes} min ${modePhrase}` : "Last stop") : stop.description}
+            </p>
           </>
         );
-        const rowClass = "grid w-full grid-cols-[26px_1fr_auto] items-start gap-2.5 rounded-lg px-1 py-2 text-left";
+        const selected = selectedIndex === i;
+        // The body is a subgrid spanning the whole row: the name shares the first line with the chips,
+        // and the description below runs under them to the full width.
+        const bodyClass = "col-[1/-1] row-[1/span_2] grid grid-cols-subgrid grid-rows-subgrid items-start gap-x-2.5 text-left";
         return (
           <li key={stop.placeId}>
-            {onSelect ? (
-              <button
-                type="button"
-                onClick={() => onSelect(i)}
-                aria-current={selectedIndex === i ? "true" : undefined}
-                className={`${rowClass} hover:bg-black/[0.03] ${selectedIndex === i ? "bg-black/[0.04]" : ""}`}
-              >
-                {body}
-              </button>
-            ) : (
-              <div className={rowClass}>{body}</div>
-            )}
+            {/* The chips hold a link, which can't nest in the button, so they overlay its top-right
+                cell instead. The row handles the click so the chips select too; the button's own
+                clicks (including Enter and Space) bubble up to it. */}
+            <div
+              onClick={onSelect && (() => onSelect(i))}
+              className={`grid grid-cols-[26px_minmax(0,1fr)_auto] gap-x-2.5 rounded-lg px-1 py-2 ${compact ? "" : "gap-y-1"} ${onSelect ? "cursor-pointer hover:bg-black/[0.03]" : ""} ${selected ? "bg-black/[0.04]" : ""}`}
+            >
+              {onSelect ? (
+                <button type="button" aria-current={selected ? "true" : undefined} className={bodyClass}>
+                  {body}
+                </button>
+              ) : (
+                <div className={bodyClass}>{body}</div>
+              )}
+              <StopChips stop={stop} className="col-start-3 row-start-1" />
+            </div>
             {leg && !compact && (
               <div className="grid h-5 grid-cols-[26px_1fr] items-center gap-2.5 px-1 text-[11.5px] text-sub">
                 <i className="mx-auto block h-full w-0.5 bg-line" aria-hidden="true" />

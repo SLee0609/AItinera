@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { AdvancedMarker, APIProvider, ControlPosition, InfoWindow, Map, useMap, useMapsLibrary } from "@vis.gl/react-google-maps";
-import { formatVisit } from "../lib/format";
+import StopChips from "./StopChips";
 import { dayColor } from "../lib/itinerary";
 import type { DayPlan, LatLng } from "../types";
 
@@ -81,15 +81,17 @@ function MapCanvas({ dayPlans, focusDay, selected, onSelect, modePhrase }: Itine
       })}
 
       {selected && selectedDay && selectedStop && (
-        <InfoWindow
-          position={selectedStop.location}
-          pixelOffset={[0, -38]}
-          onCloseClick={() => onSelect(null)}
-          headerContent={<b className="font-sans text-sm font-semibold text-ink">{selectedStop.name}</b>}
-        >
-          <div className="grid gap-1 font-sans text-xs text-ink">
+        <InfoWindow position={selectedStop.location} pixelOffset={[0, -38]} headerDisabled>
+          {/* Google's header (and its close button) is disabled so the chips can share the name's line;
+              clicking the map closes the popover. Nothing may extend past the content box, or Google's
+              wrapper scrolls; the padding holds the focus ring of the link it focuses on open. */}
+          <div className="grid gap-1 p-1 font-sans text-xs text-ink">
+            <div className="flex items-start justify-between gap-5">
+              <b className="min-w-0 text-sm font-semibold">{selectedStop.name}</b>
+              <StopChips stop={selectedStop} />
+            </div>
             <span>
-              Day {selectedDay.day} · Stop {selected.stop + 1} · {formatVisit(selectedStop.visitMinutes)} visit
+              Day {selectedDay.day} · Stop {selected.stop + 1}
             </span>
             <span className="text-sub">
               {nextLeg && nextStop ? `Next: ${nextStop.name}, ${nextLeg.durationMinutes} min ${modePhrase}` : "Last stop of the day"}

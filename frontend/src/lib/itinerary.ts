@@ -1,4 +1,4 @@
-import type { DayPlan } from "../types";
+import type { DayPlan, Stop } from "../types";
 
 export const MIN_DAYS = 1;
 export const MAX_DAYS = 7;
@@ -17,6 +17,10 @@ export function travelSavings(optimized: number, naive: number) {
 export const dayVisitMinutes = (day: DayPlan) => day.stops.reduce((sum, s) => sum + s.visitMinutes, 0);
 
 export const dayTitle = (day: DayPlan) => (day.title ? `Day ${day.day} · ${day.title}` : `Day ${day.day}`);
+
+/** Google Maps URL that opens the stop's exact place (Maps URLs API; no key needed). */
+export const googleMapsUrl = (stop: Pick<Stop, "name" | "placeId">) =>
+  `https://www.google.com/maps/search/?${new URLSearchParams({ api: "1", query: stop.name, query_place_id: stop.placeId })}`;
 
 /** Parses the `days` query parameter, returning null when it is missing or out of range. */
 export function parseDays(value: string | null): number | null {

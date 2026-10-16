@@ -23,14 +23,6 @@ const MODE_PHRASE: Record<TravelMode, string> = {
   BICYCLE: "by bike",
 };
 
-const MODE_LABEL: Record<TravelMode, string> = {
-  TRANSIT: "Transit",
-  WALK: "Walking",
-  DRIVE: "Driving",
-  BICYCLE: "Cycling",
-};
-
 export const travelModePhrase = (mode: TravelMode) => MODE_PHRASE[mode];
-export const travelModeLabel = (mode: TravelMode) => MODE_LABEL[mode];
 
 export const pluralDays = (n: number) => `${n} ${n === 1 ? "day" : "days"}`;

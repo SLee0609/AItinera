@@ -25,16 +25,14 @@ export default function StatTiles({ itinerary }: { itinerary: Itinerary }) {
       </div>
       <div className={tile}>
         <span className={tileLabel}>
-          <ClockIcon size={14} /> Unoptimized order
+          <ClockIcon size={14} /> Unoptimized travel time
         </span>
         <span className="font-display text-3xl font-bold tracking-tight text-sub tabular-nums">{formatTravel(naive)}</span>
-        <span className="text-[12.5px] text-sub">Same stops in the order first suggested</span>
+        <span className="text-[12.5px] text-sub">Same stops, but using an unoptimized route suggested by AI</span>
       </div>
       <div className={`${tile} gap-2`}>
         <span className={tileLabel}>
-          {savings.minutes > 0
-            ? `You save ${formatTravel(savings.minutes)} of travel · ${savings.percent}% less`
-            : "The suggested order was already the fastest"}
+          You save {formatTravel(savings.minutes)} of travel · {savings.percent}% less
         </span>
         <CompareBars optimized={optimized} naive={naive} />
       </div>

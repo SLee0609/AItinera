@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { formatTravel, formatVisit } from "./format";
-import { parseDays, travelSavings, tripSearch } from "./itinerary";
+import { googleMapsUrl, parseDays, travelSavings, tripSearch } from "./itinerary";
 
 describe("formatTravel", () => {
   it("uses minutes under an hour", () => expect(formatTravel(40)).toBe("40 min"));
@@ -29,4 +29,16 @@ describe("parseDays", () => {
 
 describe("tripSearch", () => {
   it("encodes the city", () => expect(tripSearch("New York", 5, "map")).toBe("/trip?city=New+York&days=5&view=map"));
+});
+
+describe("googleMapsUrl", () => {
+  it("links to the exact place", () =>
+    expect(googleMapsUrl({ name: "Louvre Museum", placeId: "ChIJD3uTd9hx5kcR1IQvGfr8dbk" })).toBe(
+      "https://www.google.com/maps/search/?api=1&query=Louvre+Museum&query_place_id=ChIJD3uTd9hx5kcR1IQvGfr8dbk",
+    ));
+  it("encodes special characters in the name", () => {
+    const url = new URL(googleMapsUrl({ name: "Sacré-Cœur & Montmartre", placeId: "abc" }));
+    expect(url.searchParams.get("query")).toBe("Sacré-Cœur & Montmartre");
+    expect(url.searchParams.get("query_place_id")).toBe("abc");
+  });
 });

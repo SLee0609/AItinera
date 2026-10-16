@@ -16,20 +16,20 @@ const EXAMPLE_TRIPS = [
 
 const STEPS = [
   {
-    title: "Suggest attractions",
-    body: "An AI model suggests attractions for your city, sized to the length of your trip. Each one comes with a short description and a visit time.",
+    title: "Find attractions",
+    body: "An AI model suggests attractions for your city.",
   },
   {
-    title: "Check each place",
-    body: "Every suggestion is matched to a real Google Maps listing. Duplicates and places that can't be found are dropped.",
+    title: "Verify each attraction",
+    body: "Every suggestion is matched to a real Google Maps listing.",
   },
   {
-    title: "Group stops into days",
-    body: "Attractions are grouped into days by how close they are to each other, while keeping the amount of sightseeing similar from day to day.",
+    title: "Group attractions into days",
+    body: "Attractions are grouped into days by how close they are to each other, while balancing the amount of sightseeing across days.",
   },
   {
-    title: "Order each day",
-    body: "Every possible order of a day's stops is compared, and the one with the least travel time is kept.",
+    title: "Optimize routes",
+    body: "Order each day's stops to minimize travel time.",
   },
 ];
 
@@ -55,8 +55,8 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-dvh bg-canvas bg-[radial-gradient(900px_420px_at_50%_0%,#E6F6F3_0%,transparent_70%)]">
-      <header className="mx-auto flex h-16 max-w-6xl items-center gap-7 px-4 sm:px-10">
+    <div className="flex min-h-dvh flex-col bg-canvas bg-[radial-gradient(900px_420px_at_50%_0%,#E6F6F3_0%,transparent_70%)]">
+      <header className="flex h-16 items-center gap-7 px-4 sm:px-10">
         <Logo />
         <nav className="flex gap-6 text-sm">
           <button type="button" className={navLink} onClick={() => setDialog("how")}>
@@ -68,10 +68,11 @@ export default function LandingPage() {
         </nav>
       </header>
 
-      <main className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] justify-items-center gap-5 px-4 pt-20 pb-16 text-center sm:px-10 sm:pt-28">
-        <p className="font-display text-[15px] font-bold tracking-[0.18em] text-accent uppercase">AItinera</p>
+      {/* Centered in the space below the header; the extra bottom padding (the header's height) puts it
+          at the center of the whole screen. */}
+      <main className="mx-auto grid w-full max-w-6xl flex-1 grid-cols-[minmax(0,1fr)] content-center justify-items-center gap-5 px-4 pt-12 pb-28 text-center sm:px-10">
         <h1 className="max-w-[860px] font-display text-4xl leading-[1.06] font-bold tracking-[-0.03em] text-balance sm:text-[58px]">
-          AI-powered efficient travel itineraries. <span className="font-semibold text-sub">Less backtracking, more exploring.</span>
+          Create <span className="text-accent">efficient</span> travel itineraries. <span className="font-semibold text-sub">Less backtracking, more exploring.</span>
         </h1>
 
         <form
@@ -136,10 +137,15 @@ export default function LandingPage() {
       </main>
 
       <Dialog open={dialog === "how"} onClose={() => setDialog(null)} title="How it works">
+        <p className="-mt-2 text-sm text-sub">
+          AItinera goes beyond AI-generated travel suggestions by leveraging real-world geographical data to organize attractions into
+          efficient daily routes.
+        </p>
         <ol className="grid gap-4">
           {STEPS.map((s, i) => (
-            <li key={s.title} className="grid grid-cols-[28px_1fr] gap-3">
-              <span className="grid size-7 place-items-center rounded-full bg-accent-soft text-[13px] font-bold text-accent">
+            <li key={s.title} className="grid grid-cols-[28px_1fr] items-start gap-3">
+              {/* Nudged down so the circle's top meets the top of the title text, not its line box. */}
+              <span className="mt-1.5 grid size-7 place-items-center rounded-full bg-accent-soft text-[13px] font-bold text-accent">
                 {i + 1}
               </span>
               <div>

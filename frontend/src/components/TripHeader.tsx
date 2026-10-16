@@ -9,7 +9,6 @@ export type TripView = "list" | "map";
 interface TripHeaderProps {
   city: string;
   days: number;
-  modeLabel?: string;
   view: TripView;
   onViewChange: (view: TripView) => void;
 }
@@ -19,7 +18,7 @@ const VIEWS: { value: TripView; label: string; Icon: typeof ListIcon }[] = [
   { value: "map", label: "Map", Icon: MapIcon },
 ];
 
-export default function TripHeader({ city, days, modeLabel, view, onViewChange }: TripHeaderProps) {
+export default function TripHeader({ city, days, view, onViewChange }: TripHeaderProps) {
   const [shareState, setShareState] = useState<"idle" | "copied" | "failed">("idle");
 
   useEffect(() => {
@@ -44,7 +43,6 @@ export default function TripHeader({ city, days, modeLabel, view, onViewChange }
         <PinIcon size={15} className="shrink-0" />
         <span className="truncate">
           <b className="font-semibold text-ink">{city}</b> · {pluralDays(days)}
-          {modeLabel && ` · ${modeLabel}`}
         </span>
       </div>
       <div className="ml-auto flex items-center gap-2.5">

@@ -2,8 +2,9 @@ import { useState } from "react";
 import CompareBars from "./CompareBars";
 import ItineraryMap, { type SelectedStop } from "./ItineraryMap";
 import StopList from "./StopList";
+import TruncatedText from "./TruncatedText";
 import { ChevronIcon } from "./icons";
-import { formatTravel, formatVisit, pluralDays, travelModePhrase } from "../lib/format";
+import { formatTravel, formatVisit, travelModePhrase } from "../lib/format";
 import { dayColor, dayTitle, dayVisitMinutes } from "../lib/itinerary";
 import type { Itinerary } from "../types";
 
@@ -23,18 +24,11 @@ export default function MapView({ itinerary }: { itinerary: Itinerary }) {
   };
 
   const focused = focusDay !== null ? dayPlans[focusDay] : null;
-  const cityShort = itinerary.city.split(",")[0];
 
   return (
     <main className="grid md:min-h-0 md:flex-1 md:grid-cols-[380px_1fr]">
-      <aside className="grid grid-rows-[auto_1fr] border-line bg-white max-md:border-b md:overflow-hidden md:border-r">
-        <div className="grid gap-2.5 border-b border-line px-5 py-4">
-          <h2 className="font-display text-xl font-bold tracking-tight">
-            {cityShort}, {pluralDays(dayPlans.length)}
-          </h2>
-          <CompareBars optimized={itinerary.optimizedTravelMinutes} naive={itinerary.naiveTravelMinutes} />
-        </div>
-        <div className="grid content-start gap-2 p-3 md:overflow-y-auto">
+      <aside className="grid min-w-0 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(0,1fr)] border-line bg-white max-md:border-b md:overflow-hidden md:border-r">
+        <div className="grid grid-cols-[minmax(0,1fr)] content-start gap-2 p-3 md:overflow-y-auto">
           {dayPlans.map((day, d) => {
             const color = dayColor(d);
             const open = focusDay === null || focusDay === d;
@@ -55,8 +49,7 @@ export default function MapView({ itinerary }: { itinerary: Itinerary }) {
                   className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left font-semibold"
                 >
                   <i className="block size-2.5 shrink-0 rounded-full" style={{ background: color }} aria-hidden="true" />
-                  <span className="min-w-0 flex-1 truncate">{dayTitle(day)}</span>
-                  <span className="text-xs font-medium text-sub">{formatTravel(day.travelMinutes)}</span>
+                  <TruncatedText text={dayTitle(day)} className="min-w-0 flex-1" />
                   <ChevronIcon size={16} className={`shrink-0 text-sub transition-transform ${open ? "rotate-180" : ""}`} />
                 </button>
                 {open && (
@@ -102,7 +95,7 @@ export default function MapView({ itinerary }: { itinerary: Itinerary }) {
 
         <div className="absolute bottom-6 left-4 grid w-[min(330px,calc(100%-90px))] gap-2 rounded-[14px] bg-white px-4 py-3.5 shadow-[0_10px_30px_-10px_rgb(15_23_42/0.35)]">
           <div className="flex items-baseline justify-between">
-            <span className="text-[12.5px] font-semibold text-sub">{focused ? `Day ${focused.day} travel` : "Total travel"}</span>
+            <span className="text-[15px] font-semibold text-ink">{focused ? `Day ${focused.day} travel time` : "Total travel time"}</span>
             <b className="font-display text-2xl font-bold tracking-tight text-accent">
               {formatTravel(focused ? focused.travelMinutes : itinerary.optimizedTravelMinutes)}
             </b>

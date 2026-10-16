@@ -4,8 +4,12 @@ import MapView from "../components/MapView";
 import TripHeader, { type TripView } from "../components/TripHeader";
 import { USING_MOCK_API } from "../api/client";
 import { useItinerary } from "../hooks/useItinerary";
-import { pluralDays, travelModeLabel } from "../lib/format";
+import { pluralDays } from "../lib/format";
 import { parseDays } from "../lib/itinerary";
+
+// Loading and error states are centered like the landing page: the extra bottom padding (the
+// header's height) puts them at the center of the screen.
+const CENTERED = "grid flex-1 content-center justify-items-center px-4 pt-12 pb-28 text-center";
 
 export default function TripPage() {
   const [params] = useSearchParams();
@@ -34,11 +38,10 @@ function Trip({ city, days }: { city: string; days: number }) {
   const itinerary = state.status === "success" ? state.itinerary : null;
 
   return (
-    <div className={`bg-canvas ${view === "map" && itinerary ? "flex flex-col md:h-dvh" : "min-h-dvh"}`}>
+    <div className={`bg-canvas ${!itinerary ? "flex min-h-dvh flex-col" : view === "map" ? "flex flex-col md:h-dvh" : "min-h-dvh"}`}>
       <TripHeader
         city={itinerary?.city ?? city}
         days={days}
-        modeLabel={itinerary ? travelModeLabel(itinerary.travelMode) : undefined}
         view={view}
         onViewChange={setView}
       />
@@ -49,19 +52,19 @@ function Trip({ city, days }: { city: string; days: number }) {
       )}
 
       {state.status === "loading" && (
-        <div className="grid place-items-center px-4 py-32 text-center" role="status">
+        <div className={CENTERED} role="status">
           <span className="mb-5 size-9 animate-spin rounded-full border-[3px] border-track border-t-accent" aria-hidden="true" />
           <p className="font-display text-xl font-bold">
             Planning {pluralDays(days)} in {city}
           </p>
           <p className="mt-1 max-w-md text-sm text-sub">
-            Picking attractions, checking them on Google Maps, and comparing travel times. This can take up to a minute.
+            Picking attractions, verifying them, and optimizing routes. This can take up to a minute.
           </p>
         </div>
       )}
 
       {state.status === "error" && (
-        <div className="grid place-items-center px-4 py-32 text-center" role="alert">
+        <div className={CENTERED} role="alert">
           <p className="font-display text-xl font-bold">Couldn't plan this trip</p>
           <p className="mt-1 max-w-md text-sm text-sub">{state.message}</p>
           <div className="mt-5 flex gap-2.5">
