@@ -10,7 +10,7 @@ Environment variables live in the Vercel project, including its Development envi
 cd frontend
 npm install
 npm i -g vercel        # once
-vercel link            # once: select the AItinera frontend project
+vercel link            # once: select the aitinera project
 vercel env pull .env.local
 npm run dev            # http://localhost:5173
 ```
@@ -38,7 +38,7 @@ In Vercel, a variable targets either "Production, Preview" or "Development", so 
 
 The Maps JavaScript key is restricted in Google Cloud Console:
 
-- **Websites:** `http://localhost:5173/*` and the production URL (`https://<project>.vercel.app/*`). Add new domains here before using them, or the map shows `RefererNotAllowedMapError`. Don't add `https://*.vercel.app/*`, which would allow every Vercel site.
+- **Websites:** `http://localhost:5173/*` and the production URL (`https://aitinera-app.vercel.app/*`). Add new domains here before using them, or the map shows `RefererNotAllowedMapError`. Don't add `https://*.vercel.app/*`, which would allow every Vercel site.
 - **APIs:** Maps JavaScript API only.
 
 ## Deploying

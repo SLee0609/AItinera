@@ -6,7 +6,7 @@ FastAPI service that turns a city and a trip length into an ordered, day-by-day 
 
 1. **Suggest**: Gemini lists `6 × days` candidate attractions in priority order, each with a description, visit time and neighborhood (`app/services/gemini.py`).
 2. **Verify**: Places resolves the city, then matches candidates in priority order until `4 × days` unique places inside the city area are found. Spares replace rejects (`app/services/places.py`).
-3. **Split into days**: farthest-point seeds, then greedy assignment by straight-line distance, capping each day at 1.25× the average sightseeing time and 8 stops (`app/algorithm/clustering.py`). No API calls.
+3. **Split into days**: minimizes the total estimated travel, where a day's estimate is the shortest straight-line open path through its stops (Held-Karp). Each day is capped at 1.25× the average sightseeing time and 8 stops. For each possible first seed: farthest-point seeds, greedy nearest-first assignment, then local search that moves and swaps attractions between days while the total shrinks; the best start wins (`app/algorithm/clustering.py`). No API calls; at most about 0.2 s of CPU for 7 days.
 4. **Transit times**: Routes `computeRouteMatrix` (transit, next weekday 10:00 local) for every ordered pair inside each day and the baseline's consecutive pairs only (`app/services/routes.py`). Pairs without a transit route fall back to a walking estimate.
 5. **Order each day**: brute force over every order of the day's stops, as an open path (`app/algorithm/ordering.py`).
 6. **Baseline**: the same attractions in Gemini's order, cut into consecutive days (`app/algorithm/baseline.py`).

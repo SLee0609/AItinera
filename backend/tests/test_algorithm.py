@@ -1,7 +1,18 @@
+import random
+from itertools import pairwise, permutations
+
 import pytest
 
 from app.algorithm.baseline import baseline_pairs, naive_days, naive_travel_minutes, split_evenly
-from app.algorithm.clustering import distance_matrix, partition_into_days, select_seeds
+from app.algorithm.clustering import (
+    assign_remaining,
+    distance_matrix,
+    estimated_travel,
+    partition_into_days,
+    refine,
+    select_seeds,
+    travel_estimator,
+)
 from app.algorithm.geo import Point, Viewport, haversine_m, walking_estimate_s
 from app.algorithm.ordering import best_order, intra_day_pairs, path_cost
 
@@ -9,6 +20,11 @@ from app.algorithm.ordering import best_order, intra_day_pairs, path_cost
 def line_points(n: int) -> list[Point]:
     """Points 1 km apart going east along the equator."""
     return [Point(0.0, i * 0.008993) for i in range(n)]
+
+
+def grid_points(xy: list[tuple[int, int]]) -> list[Point]:
+    """Points on a 1 km grid near the equator: x east, y north."""
+    return [Point(y * 0.008993, x * 0.008993) for x, y in xy]
 
 
 # --- geo -------------------------------------------------------------------------------------------------
@@ -40,6 +56,40 @@ def test_seeds_are_spread_out():
     dist = distance_matrix(line_points(10))
     assert sorted(select_seeds(dist, 2)) == [0, 9]
     assert sorted(select_seeds(dist, 3)) == [0, 4, 9]
+    assert select_seeds(dist, 2, first=4) == [4, 9]
+
+
+def test_estimated_travel_small_groups_and_lines():
+    dist = distance_matrix(line_points(5))
+    assert estimated_travel([], dist) == 0.0
+    assert estimated_travel([3], dist) == 0.0
+    # Visiting points on a line costs the distance between its ends, whatever the input order.
+    assert estimated_travel([4, 0, 2], dist) == pytest.approx(4000, rel=0.01)
+
+
+def test_estimated_travel_matches_brute_force():
+    rng = random.Random(0)
+    pts = [Point(rng.uniform(0, 0.05), rng.uniform(0, 0.05)) for _ in range(7)]
+    dist = distance_matrix(pts)
+    brute = min(sum(dist[a][b] for a, b in pairwise(p)) for p in permutations(range(7)))
+    assert estimated_travel(range(7), dist) == pytest.approx(brute)
+
+
+def test_refine_never_breaks_limits_or_adds_travel():
+    rng = random.Random(1)
+    for _ in range(30):
+        n, days = 12, 3
+        pts = [Point(rng.uniform(0, 0.1), rng.uniform(0, 0.1)) for _ in range(n)]
+        visit = [rng.choice([60, 90, 120, 180]) for _ in range(n)]
+        dist, cap = distance_matrix(pts), sum(visit) / days * 1.25
+        travel = travel_estimator(dist)
+        start = assign_remaining(dist, visit, select_seeds(dist, days), 5, 1.25)
+        groups = refine(start, visit, 5, cap, travel)
+        assert sorted(i for g in groups for i in g) == list(range(n))
+        assert all(1 <= len(g) <= 5 for g in groups)
+        limit = max(cap, *(sum(visit[i] for i in s) for s in start))
+        assert all(sum(visit[i] for i in g) <= limit for g in groups)
+        assert sum(travel(g) for g in groups) <= sum(travel(g) for g in start)
 
 
 def test_partition_assigns_every_attraction_once(paris_attractions):
@@ -59,6 +109,18 @@ def test_partition_keeps_neighbors_together(paris_attractions):
     names = {a.name: i for i, a in enumerate(paris_attractions)}
     assert day_of[names["Le Marais"]] == day_of[names["Place des Vosges"]]
     assert day_of[names["Notre-Dame"]] == day_of[names["Sainte-Chapelle"]]
+
+
+def test_partition_splits_far_apart_clusters():
+    # Sites 0, 1, 3 are in the west (x <= 1 km) and 2, 4, 5 in the east (x >= 3 km).
+    pts = grid_points([(1, 5), (0, 3), (5, 5), (1, 6), (5, 3), (3, 5)])
+    dist = distance_matrix(pts)
+    # The greedy start alone mixes them: west sites 1 and 3 share a day with site 4, 5 km east.
+    assert sorted(map(sorted, assign_remaining(dist, [60] * 6, select_seeds(dist, 2), 8, 1.25))) == [
+        [0, 2, 5],
+        [1, 3, 4],
+    ]
+    assert partition_into_days(pts, [60] * 6, 2) == [[0, 1, 3], [2, 4, 5]]
 
 
 def test_partition_balances_workload():
@@ -105,8 +167,6 @@ def test_best_order_uses_direction():
 def test_best_order_beats_every_other_order():
     times = {(a, b): float((a * 7 + b * 13) % 11 + 1) for a in range(5) for b in range(5) if a != b}
     _, cost = best_order(range(5), times)
-    from itertools import permutations
-
     assert cost == min(path_cost(p, times) for p in permutations(range(5)))
 
 
